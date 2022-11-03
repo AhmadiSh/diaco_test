@@ -2,7 +2,7 @@ import 'dart:io';
 
 class Message {
   Message(
-      {int? id, String? userName, String? text, String? date, File? file,int? replyId}) {
+      {int? id, String? userName, String? text, String? date, String? file,int? replyId}) {
     _id = id;
     _username=userName;
     _text=text;
@@ -15,7 +15,7 @@ class Message {
   String? _username;
   String? _text;
   String? _data;
-  File? _file;
+  String? _file;
   int ?_replyId;
 
   int? get id => _id;
@@ -25,7 +25,7 @@ class Message {
 
   String? get date => _data;
 
-  File? get file => _file;
+  String? get file => _file;
 
   int? get replyId=>_replyId;
 
@@ -55,7 +55,7 @@ class Message {
     _text = value;
   }
 
-  set file(File? value) {
+  set file(String? value) {
     _file = value;
   }
 }

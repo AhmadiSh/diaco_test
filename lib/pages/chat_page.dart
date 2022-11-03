@@ -26,6 +26,7 @@ class _ChatPageState extends State<ChatPage> {
   late ScrollController scrollController;
   late final Box _boxUsers;
   late final Box _boxMessages;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -45,6 +46,7 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     final provider = Provider.of<ChatProvider>(context);
     return Scaffold(
+      key: _scaffoldKey,
       extendBody: true,
       extendBodyBehindAppBar: true,
       backgroundColor: AppColors.gray100,
@@ -145,7 +147,7 @@ class _ChatPageState extends State<ChatPage> {
                               ),
                             ),
                             Text(
-                              "Online",
+                              "3 members online",
                               style: Theme.of(context)
                                   .textTheme
                                   .caption!
@@ -221,6 +223,7 @@ class _ChatPageState extends State<ChatPage> {
                                     index: index,
                                     userName: messages[index].username!,
                                     text: messages[index].text!,
+                                    filePath: messages[index].file,
                                     isSender: widget.keyBox ==
                                             messages[index].username!
                                         ? true
@@ -233,6 +236,18 @@ class _ChatPageState extends State<ChatPage> {
                                     delete: () async {
                                       provider
                                           .deleteMessage(messages[index].id!);
+                                    },
+                                    isLast: <bool>() {
+                                      if (index == messages.length - 1) {
+                                        return true;
+                                      }
+                                      if (index < messages.length - 2 &&
+                                          messages[index].username! !=
+                                              messages[index + 1].username!) {
+                                        return true;
+                                      } else {
+                                        return false;
+                                      }
                                     },
                                   );
                                 }),
@@ -284,11 +299,12 @@ class _ChatPageState extends State<ChatPage> {
 
                                     if (provider.uploadState) {
                                       await provider.uploadMessage(
-                                          provider.file!,
                                           username: widget.keyBox);
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(const SnackBar(
+                                              content: Text('file uploaded')));
                                       FocusScopeNode().unfocus();
                                       provider.chatController.clear();
-                                      provider.changeStateUploadFile();
                                     } else {
                                       await provider.sendMessage(
                                         username: widget.keyBox,
@@ -321,7 +337,8 @@ class _ChatPageState extends State<ChatPage> {
                                         borderRadius: BorderRadius.circular(24),
                                         child: InkWell(
                                           onTap: () async {
-                                            await provider.pickImage();
+                                            await provider
+                                                .pickImage(ImageSource.gallery);
                                           },
                                           borderRadius:
                                               BorderRadius.circular(24),
@@ -344,7 +361,10 @@ class _ChatPageState extends State<ChatPage> {
                                           borderRadius:
                                               BorderRadius.circular(24),
                                           child: InkWell(
-                                            onTap: () {},
+                                            onTap: () async {
+                                              await provider.pickImage(
+                                                  ImageSource.camera);
+                                            },
                                             borderRadius:
                                                 BorderRadius.circular(24),
                                             child: Container(

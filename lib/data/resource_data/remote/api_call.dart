@@ -6,23 +6,20 @@ class APICaller {
   callAllMessage(int count) async {
     var response = await _dio.get('https://front-challenge.devliom.ir?',
         queryParameters: {'from': count});
-    print(response);
     return response;
   }
 
-  createMessage(
-      {required username, required text,}) async {
-    var response =
-        await _dio.post('https://front-challenge.devliom.ir?', data: {
-      'username': username,
-      'text': text,
-
-    });
-    print(response);
+  createMessage({required username, required text, String? filePath}) async {
+    var response = await _dio.post('https://front-challenge.devliom.ir?',
+        data: {'username': username, 'text': text, 'file': filePath});
     return response;
   }
 
   updateMessage({required id, required text}) async {
+    FormData formData = FormData.fromMap({
+      "id": id,
+      "text": text,
+    });
     var response =
         await _dio.post('https://front-challenge.devliom.ir/update?', data: {
       'id': id,
@@ -43,9 +40,8 @@ class APICaller {
     FormData formData = FormData.fromMap({
       "file": await MultipartFile.fromFile(filePath),
     });
-    var response = await _dio.post('https://front-challenge.devliom.ir/upload?',
+    var response = await _dio.post('https://front-challenge.devliom.ir/upload',
         data: formData);
-    print(response);
     return response;
   }
 }

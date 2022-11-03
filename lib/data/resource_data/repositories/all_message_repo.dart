@@ -14,9 +14,9 @@ class AllMessageRepository {
   }
 
   Future<dynamic> createMessage(
-      {required username, required text}) async {
+      {required username, required text,String? filePath}) async {
     Response response = await _apiCaller.createMessage(
-        username: username, text: text);
+        username: username, text: text,filePath:filePath);
     dataModel = AllMessages.fromJson(response.data);
     return dataModel;
   }

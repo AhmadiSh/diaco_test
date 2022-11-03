@@ -7,6 +7,7 @@ import 'package:diaco_test/data/resource_data/response_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -22,11 +23,10 @@ class ChatProvider extends ChangeNotifier {
   int idEdit = -1;
   bool uploadState = false;
   bool hasText = false;
-  bool selectFile = false;
-  final count = 35;
+  bool fileUploaded = false;
 
   ChatProvider() {
-    getAllMessages(count);
+    getAllMessages();
   }
 
   //ui update for icon send
@@ -34,6 +34,7 @@ class ChatProvider extends ChangeNotifier {
     chatController.text.isEmpty ? hasText = false : hasText = true;
     notifyListeners();
   }
+
   //for update a message
   changeText(String text, int id) {
     chatController.text = text;
@@ -42,20 +43,16 @@ class ChatProvider extends ChangeNotifier {
     hasText = true;
     notifyListeners();
   }
+
   initText() {
     isEdit = false;
     hasText = false;
     notifyListeners();
   }
 
-  changeStateUploadFile(){
-    uploadState=false;
-    notifyListeners();
-  }
-  Future pickImage() async {
-    selectFile = !selectFile;
+  Future pickImage(source) async {
     try {
-      final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+      final image = await ImagePicker().pickImage(source:source);
       if (image == null) return;
       file = File(image.path);
       chatController.text = file!.path.toString();
@@ -67,18 +64,34 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  Future<File> compressAndGetFile(File file, String targetPath) async {
+    var compressedFile = await FlutterImageCompress.compressAndGetFile(
+      file.absolute.path,
+      targetPath,
+      quality: 5,
+    );
 
+    return compressedFile!;
+  }
 
-  Future<dynamic> getAllMessages(count) async {
+  Future<dynamic> getAllMessages() async {
     responseModel = ResponseModel.loading("Loading...");
+
     try {
-      allMessages = await _repository.fetchCallAllMessage(count);
-      if (allMessages!.status == true) {
-        for (int i = 0; i < allMessages!.data!.length; i++) {
-          messages.addAll([Message.fromJson(allMessages!.data![i])]);
+      int count = 0;
+      List<Message> response = [];
+      do {
+        allMessages = await _repository.fetchCallAllMessage(count);
+
+        if (allMessages!.status == true) {
+          for (int i = 0; i < allMessages!.data!.length; i++) {
+            response.add(Message.fromJson(allMessages!.data![i]));
+          }
         }
-        notifyListeners();
-      }
+        count += 10;
+      } while (allMessages!.data!.length != 0);
+      messages.addAll(response);
+      notifyListeners();
       responseModel = ResponseModel.completed(allMessages!);
       notifyListeners();
     } catch (e) {
@@ -87,26 +100,23 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-
-
-  sendMessage({required username, required text}) async {
+  sendMessage({required username, required text,String? filePath}) async {
     try {
-      AllMessages _allMessages;
-      _allMessages = await _repository.createMessage(
-          username: username, text: text);
-
-      if (_allMessages.status == true) {
-        Message message = Message(
+      AllMessages allMessages;
+      allMessages =
+          await _repository.createMessage(username: username, text: text,filePath:filePath);
+      if (allMessages.status == true) {
+        messages.clear();
+        await getAllMessages();
+        /*    Message message = Message(
             userName: username, text: text, file: file);
-        messages.add(message);
+        messages.add(message);*/
         notifyListeners();
       }
     } catch (e) {
       return e;
     }
   }
-
-
 
   updateMessage(String text, int id) async {
     try {
@@ -138,21 +148,28 @@ class ChatProvider extends ChangeNotifier {
         }
       }
 
-      await getAllMessages(count);
+      await getAllMessages();
       notifyListeners();
     } catch (e) {
       return e;
     }
   }
 
-  uploadMessage(File file, {required username}) async {
+  uploadMessage({required username}) async {
+    final lastIndex = file!.path.lastIndexOf(new RegExp(r'.jp'));
+    final splitted = file!.path.substring(0, (lastIndex));
+    final outPath = "${splitted}_out${file!.path.substring(lastIndex)}";
+    File _file = await compressAndGetFile(file!, outPath);
     try {
       AllMessages allMessages =
-          await _repository.uploadMessage(filePath: file.path);
+          await _repository.uploadMessage(filePath: _file.path);
       if (allMessages.status == true) {
-        Message message =
-            Message(userName: username, file: file, text: file.path);
-        messages.add(message);
+        await sendMessage(username: username, text: _file.path,filePath:_file.path);
+     /*   Message message =
+            Message(userName: username, file:_file.path, text:_file.path);
+        messages.add(message);*/
+        fileUploaded = true;
+        uploadState = false;
         notifyListeners();
       }
     } catch (e) {
