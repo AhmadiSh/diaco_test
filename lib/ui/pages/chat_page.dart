@@ -1,64 +1,37 @@
-import 'dart:io';
-
+import 'package:diaco_test/data/enums/enums.dart';
 import 'package:diaco_test/data/models/message.dart';
 import 'package:diaco_test/data/resource_data/response_model.dart';
 import 'package:diaco_test/providers/chat_provider.dart';
-import 'package:diaco_test/style/colors.dart';
-import 'package:diaco_test/style/dimens.dart';
-import 'package:diaco_test/widgets/message_card.dart';
+import 'package:diaco_test/providers/theme_provider.dart';
+import 'package:diaco_test/ui/style/colors.dart';
+import 'package:diaco_test/ui/style/dimens.dart';
+import 'package:diaco_test/ui/widgets/message_card.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-class ChatPage extends StatefulWidget {
-  const ChatPage({Key? key, required this.keyBox}) : super(key: key);
+class ChatPage extends StatelessWidget {
+  const ChatPage({Key? key, required this.userName}) : super(key: key);
 
-  final String keyBox;
-
-  @override
-  State<ChatPage> createState() => _ChatPageState();
-}
-
-class _ChatPageState extends State<ChatPage> {
-  late final TextEditingController _chatController;
-  late ScrollController scrollController;
-  late final Box _boxUsers;
-  late final Box _boxMessages;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  @override
-  void initState() {
-    _boxUsers = Hive.box('users');
-    _boxMessages = Hive.box('messages');
-    _chatController = TextEditingController();
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _chatController.clear();
-    super.dispose();
-  }
+  final String userName;
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<ChatProvider>(context);
     return Scaffold(
-      key: _scaffoldKey,
       extendBody: true,
       extendBodyBehindAppBar: true,
-      backgroundColor: AppColors.gray100,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.gray100,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         leading: Container(),
         elevation: 0,
         flexibleSpace: SafeArea(
           child: Container(
-            decoration: const BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.only(
+            decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: const BorderRadius.only(
                     bottomRight: Radius.circular(24),
                     bottomLeft: Radius.circular(24))),
             width: fullWidth(context),
@@ -115,7 +88,7 @@ class _ChatPageState extends State<ChatPage> {
                                     shape: BoxShape.circle,
                                     color: Colors.white),
                                 child: Container(
-                                  margin: EdgeInsets.all(1),
+                                  margin: const EdgeInsets.all(1),
                                   decoration: const BoxDecoration(
                                       shape: BoxShape.circle,
                                       color: AppColors.primaryColor),
@@ -162,22 +135,20 @@ class _ChatPageState extends State<ChatPage> {
                     ],
                   ),
                 ),
-                Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(24),
-                  child: InkWell(
-                    onTap: () {},
-                    borderRadius: BorderRadius.circular(24),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(shape: BoxShape.circle),
-                      child: const Icon(
-                        Icons.video_camera_front_outlined,
-                        color: AppColors.gray400,
-                      ),
-                    ),
-                  ),
-                ),
+                CupertinoSwitch(
+                    value: context
+                        .select<ThemeProvider, bool>((bloc) => bloc.isDark),
+                    activeColor: AppColors.primaryColor,
+                    onChanged: (val) {
+                      if (val) {
+                        Provider.of<ThemeProvider>(context, listen: false)
+                            .setTheme(ThemeModel.dark);
+                      }
+                      if (!val) {
+                        Provider.of<ThemeProvider>(context, listen: false)
+                            .setTheme(ThemeModel.light);
+                      }
+                    }),
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 8),
                   child: Material(
@@ -224,10 +195,10 @@ class _ChatPageState extends State<ChatPage> {
                                     userName: messages[index].username!,
                                     text: messages[index].text!,
                                     filePath: messages[index].file,
-                                    isSender: widget.keyBox ==
-                                            messages[index].username!
-                                        ? true
-                                        : false,
+                                    isSender:
+                                        userName == messages[index].username!
+                                            ? true
+                                            : false,
                                     edit: () async {
                                       provider.changeText(messages[index].text!,
                                           messages[index].id!);
@@ -236,6 +207,7 @@ class _ChatPageState extends State<ChatPage> {
                                     delete: () async {
                                       provider
                                           .deleteMessage(messages[index].id!);
+                                      FocusScopeNode().unfocus();
                                     },
                                     isLast: <bool>() {
                                       if (index == messages.length - 1) {
@@ -258,9 +230,9 @@ class _ChatPageState extends State<ChatPage> {
                               )
                             : Container()),
             Container(
-              decoration: const BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: const BorderRadius.only(
                       topRight: Radius.circular(24),
                       topLeft: Radius.circular(24))),
               width: fullWidth(context),
@@ -273,9 +245,10 @@ class _ChatPageState extends State<ChatPage> {
                   margin: EdgeInsets.all(mediumSize(context)),
                   padding: EdgeInsets.symmetric(
                       horizontal: xSmallSize(context), vertical: 0),
-                  decoration: const BoxDecoration(
-                      color: Color(0xfff4f5f5),
-                      borderRadius: BorderRadius.all(Radius.circular(48))),
+                  decoration: BoxDecoration(
+                      color: Theme.of(context).dividerColor,
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(48))),
                   child: TextField(
                       controller: provider.chatController,
                       decoration: InputDecoration(
@@ -299,7 +272,7 @@ class _ChatPageState extends State<ChatPage> {
 
                                     if (provider.uploadState) {
                                       await provider.uploadMessage(
-                                          username: widget.keyBox);
+                                          username: userName);
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(const SnackBar(
                                               content: Text('file uploaded')));
@@ -307,7 +280,7 @@ class _ChatPageState extends State<ChatPage> {
                                       provider.chatController.clear();
                                     } else {
                                       await provider.sendMessage(
-                                        username: widget.keyBox,
+                                        username: userName,
                                         text:
                                             provider.chatController.text.trim(),
                                       );

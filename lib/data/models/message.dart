@@ -19,7 +19,6 @@ class Message {
   int ?_replyId;
 
   int? get id => _id;
-
   String? get username => _username;
   String? get text => _text;
 

@@ -1,49 +1,26 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'dart:ui';
 
 import 'package:diaco_test/providers/chat_provider.dart';
 import 'package:diaco_test/providers/login_provider.dart';
-import 'package:diaco_test/style/colors.dart';
-import 'package:diaco_test/style/dimens.dart';
+import 'package:diaco_test/ui/style/colors.dart';
+import 'package:diaco_test/ui/style/dimens.dart';
+
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:provider/provider.dart';
 
 import 'chat_page.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+class LoginPage extends StatelessWidget {
+   LoginPage({Key? key}) : super(key: key);
 
-  @override
-  State<LoginPage> createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
-  late final TextEditingController _textEditingController;
-  final GlobalKey<FormState> _globalKey = GlobalKey<FormState>();
-
-  late final Box _box;
-
-  @override
-  void initState() {
-    _textEditingController = TextEditingController();
-    _box = Hive.box('users');
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _textEditingController.dispose();
-    _box.close();
-    super.dispose();
-  }
+   final TextEditingController _textEditingController=TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: AppColors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Container(
           width: fullWidth(context),
@@ -56,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               Positioned(
                   child: Container(
-                color: Color(0x7C4D4C4C),
+                color: const Color(0x7C4D4C4C),
               )),
               Consumer<LoginProvider>(builder: (context, provider, child) {
                 return Positioned(
@@ -65,9 +42,9 @@ class _LoginPageState extends State<LoginPage> {
                     bottom: 0,
                     child: Container(
                       height: fullHeight(context) / 2.3,
-                      decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.only(
+                      decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: const BorderRadius.only(
                               topRight: Radius.circular(32),
                               topLeft: Radius.circular(32))),
                       child: Stack(
@@ -92,7 +69,6 @@ class _LoginPageState extends State<LoginPage> {
                                       height: standardSize(context),
                                     ),
                                     Form(
-                                      key: _globalKey,
                                       child: Column(
                                         children: [
                                           TextFormField(
@@ -146,63 +122,6 @@ class _LoginPageState extends State<LoginPage> {
                                         textAlign: TextAlign.center,
                                       ),
                                     ),
-                                    /* Consumer<UserDataProvider>(
-                                       builder: (context, userProvider, child) {
-                                         var state = userProvider.responseModel?.status;
-                                         switch (state) {
-                                           case Status.LOADING:
-                                             return Center(
-                                                 child: Container(
-                                                     margin: EdgeInsets.symmetric(
-                                                         vertical: smallSize(context)),
-                                                     child:
-                                                     const CircularProgressIndicator()));
-                                           case Status.COMPLETED:
-                                             {
-
-                                               return _registerBtn(context);
-                                             }
-                                           case Status.FAILED:
-                                             {
-                                               return Column(
-                                                 crossAxisAlignment:
-                                                 CrossAxisAlignment.start,
-                                                 mainAxisAlignment:
-                                                 MainAxisAlignment.center,
-                                                 children: [
-                                                   _registerBtn(
-                                                     context,
-                                                   ),
-                                                   Row(
-                                                     children: [
-                                                       Icon(
-                                                         Icons.error,
-                                                         color: Colors.redAccent,
-                                                         size: iconSize(context),
-                                                       ),
-                                                       const SizedBox(
-                                                         width: 6,
-                                                       ),
-                                                       Text(
-                                                         userProvider
-                                                             .responseModel!.message,
-                                                         style: theme.textTheme.caption!
-                                                             .copyWith(
-                                                           color: Colors.redAccent,
-                                                         ),
-                                                       ),
-                                                     ],
-                                                   )
-                                                 ],
-                                               );
-                                             }
-                                           default:
-                                             {
-                                               return _registerBtn(context);
-                                             }
-                                         }
-                                       },
-                                     ),*/
                                   ],
                                 ),
                               ),
@@ -219,11 +138,9 @@ class _LoginPageState extends State<LoginPage> {
                                       await provider.validateUserName(
                                           _textEditingController.text.trim());
                                   if (isValid) {
-                                    await _box.put(
-                                        _textEditingController.text.trim(), {
-                                      'userName':
-                                          _textEditingController.text.trim()
-                                    });
+                                  // ignore: use_build_context_synchronously
+                                  Provider.of<LoginProvider>(context,listen: false).setUsername(_textEditingController.text.trim());
+                                    // ignore: use_build_context_synchronously
                                     Navigator.push(
                                         context,
                                         MaterialPageRoute(
@@ -233,8 +150,7 @@ class _LoginPageState extends State<LoginPage> {
                                                   create: (context) =>
                                                       ChatProvider(),
                                                   child: ChatPage(
-                                                    keyBox:_box.get(_textEditingController.text.trim())!['userName']
-                                                  ),
+                                                      userName: provider.username),
                                                 )));
                                   }
                                 }),

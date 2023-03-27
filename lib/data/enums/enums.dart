@@ -1,0 +1,4 @@
+enum ThemeModel{
+  dark,
+  light
+}

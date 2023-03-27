@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 class ChatProvider extends ChangeNotifier {
   AllMessages? allMessages;
@@ -52,7 +53,7 @@ class ChatProvider extends ChangeNotifier {
 
   Future pickImage(source) async {
     try {
-      final image = await ImagePicker().pickImage(source:source);
+      final  image = await ImagePicker().pickImage(source:source);
       if (image == null) return;
       file = File(image.path);
       chatController.text = file!.path.toString();
@@ -100,7 +101,7 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  sendMessage({required username, required text,String? filePath}) async {
+  sendMessage({required username, String? text,String? filePath}) async {
     try {
       AllMessages allMessages;
       allMessages =
@@ -156,18 +157,15 @@ class ChatProvider extends ChangeNotifier {
   }
 
   uploadMessage({required username}) async {
-    final lastIndex = file!.path.lastIndexOf(new RegExp(r'.jp'));
+    final lastIndex = file!.path.lastIndexOf( RegExp(r'.jp'));
     final splitted = file!.path.substring(0, (lastIndex));
     final outPath = "${splitted}_out${file!.path.substring(lastIndex)}";
     File _file = await compressAndGetFile(file!, outPath);
     try {
       AllMessages allMessages =
-          await _repository.uploadMessage(filePath: _file.path);
+          await _repository.uploadMessage(filePath: "https://front-challenge.devliom.ir/files/${_file.path}");
       if (allMessages.status == true) {
-        await sendMessage(username: username, text: _file.path,filePath:_file.path);
-     /*   Message message =
-            Message(userName: username, file:_file.path, text:_file.path);
-        messages.add(message);*/
+        await sendMessage(username: username,filePath:_file.path);
         fileUploaded = true;
         uploadState = false;
         notifyListeners();

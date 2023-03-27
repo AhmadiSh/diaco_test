@@ -1,8 +1,8 @@
-import 'dart:ffi';
 
 import 'package:chat_bubbles/bubbles/bubble_special_three.dart';
-import 'package:diaco_test/style/colors.dart';
-import 'package:diaco_test/style/dimens.dart';
+import 'package:diaco_test/ui/style/colors.dart';
+import 'package:diaco_test/ui/style/dimens.dart';
+
 import 'package:flutter/material.dart';
 
 class MessageCard extends StatelessWidget {
@@ -38,7 +38,7 @@ class MessageCard extends StatelessWidget {
       child: Row(
         mainAxisAlignment:
             isSender ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           isSender
               ? Container()
@@ -80,16 +80,28 @@ class MessageCard extends StatelessWidget {
                     ]);
                   }
                 : () {},
-            child: BubbleSpecialThree(
-              sent: isSender ? true : false,
-              text: '$text${filePath!=null?'\n$filePath':''}',
-              textStyle: Theme.of(context).textTheme.bodyText1!.copyWith(
-                  color: isSender ? AppColors.white : AppColors.gray900),
-              isSender: isSender,
-              seen: isSender ? true : false,
-              delivered: isSender ? true : false,
-              color: isSender ? AppColors.primaryColor : AppColors.white,
-              tail: isLast(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if(filePath!=null)SizedBox(
+                  width: 150,
+                  child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(filePath!)),
+                ),
+                BubbleSpecialThree(
+                  sent: isSender ? true : false,
+                  text: text+(filePath??''),
+                  textStyle: Theme.of(context).textTheme.bodyText1!.copyWith(
+                      color: isSender ? AppColors.white : Theme.of(context).textTheme.bodyText1!.color),
+                  isSender: isSender,
+                  seen: isSender ? true : false,
+                  delivered: isSender ? true : false,
+                  color: isSender ? Theme.of(context).primaryColor :  Theme.of(context).cardColor,
+                  tail: isLast(),
+                ),
+
+              ],
             ),
           ),
         ],
