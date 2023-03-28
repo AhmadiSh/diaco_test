@@ -91,7 +91,7 @@ class MessageCard extends StatelessWidget {
                 ),
                 BubbleSpecialThree(
                   sent: isSender ? true : false,
-                  text: text+(filePath??''),
+                  text: text,
                   textStyle: Theme.of(context).textTheme.bodyText1!.copyWith(
                       color: isSender ? AppColors.white : Theme.of(context).textTheme.bodyText1!.color),
                   isSender: isSender,

@@ -4,17 +4,17 @@ import 'package:diaco_test/data/models/allMessage.dart';
 import 'package:diaco_test/data/models/message.dart';
 import 'package:diaco_test/data/resource_data/repositories/all_message_repo.dart';
 import 'package:diaco_test/data/resource_data/response_model.dart';
+import 'package:diaco_test/utils/logger_helper.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 
 class ChatProvider extends ChangeNotifier {
-  AllMessages? allMessages;
-
   final AllMessageRepository _repository = AllMessageRepository();
   late ResponseModel responseModel;
   TextEditingController chatController = TextEditingController();
@@ -53,12 +53,12 @@ class ChatProvider extends ChangeNotifier {
 
   Future pickImage(source) async {
     try {
-      final  image = await ImagePicker().pickImage(source:source);
+      final image = await ImagePicker().pickImage(source: source);
       if (image == null) return;
       file = File(image.path);
       chatController.text = file!.path.toString();
       checkTextController();
-      uploadState = true;
+
       notifyListeners();
     } on PlatformException catch (e) {
       notifyListeners();
@@ -80,20 +80,18 @@ class ChatProvider extends ChangeNotifier {
 
     try {
       int count = 0;
-      List<Message> response = [];
+      AllMessages? allMessages;
       do {
         allMessages = await _repository.fetchCallAllMessage(count);
-
         if (allMessages!.status == true) {
-          for (int i = 0; i < allMessages!.data!.length; i++) {
-            response.add(Message.fromJson(allMessages!.data![i]));
+          for (int i = 0; i < allMessages.data!.length; i++) {
+            messages.add(Message.fromJson(allMessages.data![i]));
           }
         }
         count += 10;
-      } while (allMessages!.data!.length != 0);
-      messages.addAll(response);
+      } while (allMessages.data!.length != 0);
       notifyListeners();
-      responseModel = ResponseModel.completed(allMessages!);
+      responseModel = ResponseModel.completed(allMessages);
       notifyListeners();
     } catch (e) {
       responseModel = ResponseModel.failed("check your connection.");
@@ -101,17 +99,14 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  sendMessage({required username, String? text,String? filePath}) async {
+  sendMessage({required username, String? text, String? link}) async {
     try {
       AllMessages allMessages;
-      allMessages =
-          await _repository.createMessage(username: username, text: text,filePath:filePath);
+      allMessages = await _repository.createMessage(
+          username: username, text: text, link: link);
       if (allMessages.status == true) {
-        messages.clear();
-        await getAllMessages();
-        /*    Message message = Message(
-            userName: username, text: text, file: file);
-        messages.add(message);*/
+        // await getAllMessages();
+        messages.add(Message.fromJson(allMessages.data));
         notifyListeners();
       }
     } catch (e) {
@@ -157,15 +152,14 @@ class ChatProvider extends ChangeNotifier {
   }
 
   uploadMessage({required username}) async {
-    final lastIndex = file!.path.lastIndexOf( RegExp(r'.jp'));
+    final lastIndex = file!.path.lastIndexOf(RegExp(r'.jp'));
     final splitted = file!.path.substring(0, (lastIndex));
     final outPath = "${splitted}_out${file!.path.substring(lastIndex)}";
     File _file = await compressAndGetFile(file!, outPath);
     try {
-      AllMessages allMessages =
-          await _repository.uploadMessage(filePath: "https://front-challenge.devliom.ir/files/${_file.path}");
-      if (allMessages.status == true) {
-        await sendMessage(username: username,filePath:_file.path);
+      AllMessages? allMessages = await _repository.uploadMessage(file: _file);
+      if (allMessages?.status == true) {
+        messages.add(Message.fromJson(allMessages?.data));
         fileUploaded = true;
         uploadState = false;
         notifyListeners();

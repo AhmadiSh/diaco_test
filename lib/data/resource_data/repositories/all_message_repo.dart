@@ -1,3 +1,6 @@
+
+import 'dart:io';
+
 import 'package:diaco_test/data/models/allMessage.dart';
 import 'package:diaco_test/data/resource_data/remote/api_call.dart';
 import 'package:dio/dio.dart';
@@ -14,9 +17,9 @@ class AllMessageRepository {
   }
 
   Future<dynamic> createMessage(
-      {required username, required text,String? filePath}) async {
+      {required username, required text,String? link}) async {
     Response response = await _apiCaller.createMessage(
-        username: username, text: text,filePath:filePath);
+        username: username, text: text,link:link);
     dataModel = AllMessages.fromJson(response.data);
     return dataModel;
   }
@@ -33,8 +36,8 @@ class AllMessageRepository {
     return dataModel;
   }
 
-  Future<dynamic> uploadMessage({required filePath}) async {
-    Response response = await _apiCaller.uploadMessage(filePath: filePath);
+  Future<AllMessages?> uploadMessage({required File file}) async {
+    Response response = await _apiCaller.uploadMessage(file: file);
     dataModel = AllMessages.fromJson(response.data);
     return dataModel;
   }

@@ -1,3 +1,6 @@
+
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 
 class APICaller {
@@ -9,9 +12,9 @@ class APICaller {
     return response;
   }
 
-  createMessage({required username, required text, String? filePath}) async {
+  createMessage({required username, required text, String? link}) async {
     var response = await _dio.post('https://front-challenge.devliom.ir?',
-        data: {'username': username, 'text': text, 'file': filePath});
+        data: {'username': username, 'text': text, 'link': link});
     return response;
   }
 
@@ -36,9 +39,9 @@ class APICaller {
     return response;
   }
 
-  uploadMessage({required String filePath}) async {
+  uploadMessage({required File file}) async {
     FormData formData = FormData.fromMap({
-      "file": await MultipartFile.fromFile(filePath),
+      "file": file,
     });
     var response = await _dio.post('https://front-challenge.devliom.ir/upload',
         data: formData);
